@@ -1,0 +1,59 @@
+using Microsoft.SqlServer.Server;
+using MyApp.Data;
+using MyApp.Data.Providers;
+using MyApp.Models.Domain;
+using MyApp.Models.Requests;
+using MyApp.Services;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Text;
+
+namespace MyApp.Services
+{
+    public class BundleService : IBundleService
+    {
+        private readonly IDataProvider _dataProvider;
+
+        public BundleService(IDataProvider dataProvider)
+        {
+            _dataProvider = dataProvider;
+        }
+
+        public int CreateBundle(
+            BundleProductAddRequest bundleAdd,
+            int userId)
+        {
+            int id = 0;
+            _dataProvider.ExecuteNonQuery("dbo.BundleDetailsType_BatchInsert", (parameters) =>
+            {
+                SqlParameter param = new SqlParameter();
+                param.ParameterName = "@Id";
+                param.SqlDbType = SqlDbType.Int;
+                param.Direction = ParameterDirection.Output;
+                parameters.Add(param);
+
+                parameters.AddWithValue("@Quantity", bundleAdd.Quantity);
+                parameters.AddWithValue("@CreatedBy", userId);
+
+                SqlParameter structBundle = new SqlParameter("@BundleDetails", SqlDbType.Structured);
+
+                if (bundleAdd.ProductId != null && bundleAdd.ProductId.Any())
+                {
+                    structBundle.Value = new BundleCollection(bundleAdd.ProductId);
+                }
+
+                parameters.Add(structBundle);
+
+            },
+            (returnParams) =>
+            {
+                Int32.TryParse(returnParams["@Id"].Value.ToString(), out id);
+            });
+
+            return id;
+        }
+    }
+}
