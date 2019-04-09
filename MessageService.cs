@@ -116,82 +116,6 @@ namespace MyApp.Services
             return messages;
         }
 
-        public List<ConversationParticipant> GetUserProfileConversation(int userId)
-        {
-            List<ConversationParticipant> participants = null;
-            _dataProvider.ExecuteCmd(
-
-                "dbo.UserConversations_SelectUserInfoAndRecentMessage",
- 
-                (paramCol) =>
-                {
-                    paramCol.AddWithValue("@UserId", userId);
-                },
-                (reader, set) =>
-                {
-                    int startingIndex = 0;
-
-
-                    ConversationParticipant participant = new ConversationParticipant();
-
-
-
-                    participant.UserId = reader.GetSafeInt32(startingIndex++);
-                    participant.ParticipantId = reader.GetSafeInt32(startingIndex++);
-                    participant.CurrentId = reader.GetSafeInt32(startingIndex++);
-                    participant.ConversationId = reader.GetSafeInt32(startingIndex++);
-                    participant.FirstName = reader.GetSafeString(startingIndex++);
-                    participant.LastName = reader.GetSafeString(startingIndex++);
-                    participant.AvatarUrl = reader.GetSafeString(startingIndex++);
-                    participant.Body = reader.GetSafeString(startingIndex++);
-                    participant.TimeSent = reader.GetSafeDateTime(startingIndex++);
-
-
-                    if (participants == null)
-                    {
-                        participants = new List<ConversationParticipant>();
-                    }
-                    participants.Add(participant);
-                }
-                );
-
-            return participants;
-        }
-
-        public ConversationParticipant GetParticipantInfo(int userId, int recepientId)
-        {
-            ConversationParticipant participant = new ConversationParticipant();
-            _dataProvider.ExecuteCmd(
-
-                "dbo.UserConversations_SelectUserInfoAndRecentMessage_V2",
- 
-                (paramCol) =>
-                {
-                    paramCol.AddWithValue("@UserId", userId);
-                    paramCol.AddWithValue("@RecepientId", recepientId);
-                },
-                (reader, recordSetIndex) =>
-                {
-                    int startingIndex = 0;
-
-              
-                 
-                    participant.UserId = reader.GetSafeInt32(startingIndex++);
-                    participant.ParticipantId = reader.GetSafeInt32(startingIndex++);
-                    participant.CurrentId = reader.GetSafeInt32(startingIndex++);
-                    participant.ConversationId = reader.GetSafeInt32(startingIndex++);
-                    participant.FirstName = reader.GetSafeString(startingIndex++);
-                    participant.LastName = reader.GetSafeString(startingIndex++);
-                    participant.AvatarUrl = reader.GetSafeString(startingIndex++);
-                    participant.Body = reader.GetSafeString(startingIndex++);
-                    participant.DateCreated = reader.GetSafeDateTime(startingIndex++);
-                   
-                }
-                );
-
-            return participant;
-        }
-
         public List<UserProfile> SearchUserProfilesToAdd(string search)
         {
             List<UserProfile> results = null;
@@ -241,25 +165,6 @@ namespace MyApp.Services
             user.Description = reader.GetSafeString(index++);
             user.DOB = reader.GetSafeDateTime(index++);
             user.PhoneNumber = reader.GetSafeString(index++);
-            user.MilestoneId = reader.GetSafeInt32(index++);
-
-            return user;
-        }
-
-        private UserProfile UserProfileMapper(IDataReader reader)
-        {
-            UserProfile user = new UserProfile();
-            int index = 0;
-
-            user.Id = reader.GetSafeInt32(index++);
-            user.FirstName = reader.GetSafeString(index++);
-            user.LastName = reader.GetSafeString(index++);
-            user.Email = reader.GetSafeString(index++);
-            user.AvatarUrl = reader.GetSafeString(index++);
-            user.Description = reader.GetSafeString(index++);
-            user.DOB = reader.GetSafeDateTime(index++);
-            user.PhoneNumber = reader.GetSafeString(index++);
-            user.UserId = reader.GetSafeInt32(index++);
             user.MilestoneId = reader.GetSafeInt32(index++);
 
             return user;
@@ -322,26 +227,6 @@ namespace MyApp.Services
                 parameters.AddWithValue("@ConversationId", recepient.ConversationId);
                 parameters.AddWithValue("@UserId", recepient.UserId);
             });
-        }
-
-        public List<Conversation> GetConversations(int userId)
-        {
-            List<Conversation> conversations = null;
-            _dataProvider.ExecuteCmd("dbo.UserConversations_SelectAll", (parameters) =>
-            {
-                parameters.AddWithValue("@CreatedBy", userId);
-            },
-            (reader, shortSetIndex) =>
-            {
-                Conversation conversation = ConversationMapper(reader);
-                if (conversations == null)
-                {
-                    conversations = new List<Conversation>();
-                }
-                conversations.Add(conversation);
-            });
-
-            return conversations;
         }
 
         public Conversation GetConversation(int id)
