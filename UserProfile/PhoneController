@@ -1,0 +1,76 @@
+        [HttpPut("deletePhone")]
+        public ActionResult<SuccessResponse> DeletePhoneInDb()
+        {
+            ActionResult result = null;
+            SuccessResponse response = null;
+            int userId = _authService.GetCurrentUserId();
+            try
+            {
+                _userProfileServices.ClearPhoneAndSmsToken(userId);
+                response = new SuccessResponse();
+                result = Ok200(response);
+            }
+            catch(Exception e)
+            {
+                Logger.LogError(e.ToString());
+                result = StatusCode(500, new ErrorResponse("Internal Server Error."));
+            }
+            return result; 
+        }
+
+        [HttpPut("updatePhone")]
+        public ActionResult<ItemResponse<string>> UpdatePhone(UserProfilesUpdatePhoneRequest model)
+        {
+            ActionResult result = null;
+            ItemResponse<string> response = null;
+            int userId = _authService.GetCurrentUserId();
+            Guid preSmsToken = Guid.NewGuid();
+            string smsTokenBuild = preSmsToken.ToString();
+            string smsToken = smsTokenBuild.Substring(smsTokenBuild.Length - 4);
+            try
+            {
+                if (_userProfileServices.PhoneExists(model.PhoneNumber, userId)
+                    && _userProfileServices.VerifyConfirmPhone(smsToken, userId) == true)
+                {
+                    result = NotFound404(new ErrorResponse("That number already exists in our database."));
+                }
+                else
+                {
+                    response = new ItemResponse<string>();
+                    response.Item = _userProfileServices.UpdatePhone(model, userId, smsToken);
+                    _userProfileServices.UnverifyConfirmPhone(smsToken, userId);
+
+                    _smsServices.ConfirmSms(model.PhoneNumber, smsToken);
+
+                    result = Ok200(response);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e.ToString());
+
+                result = StatusCode(500, new ErrorResponse("Internal Server Error"));
+            }
+            return result;
+        }
+
+        [HttpPut("updatetoken")]
+        public ActionResult<SuccessResponse> VerifySmsToken(UserProfilesUpdatePhoneRequest model)
+        {
+            ActionResult result = null;
+            SuccessResponse response = null;
+            int userId = _authService.GetCurrentUserId();
+            try
+            {
+                _userProfileServices.VerifyConfirmPhone(model.SmsToken, userId);
+                response = new SuccessResponse();
+                result = Ok200(response);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e.ToString());
+                result = StatusCode(500, new ErrorResponse("Internal Server Error"));
+            }
+
+            return result;
+        }
